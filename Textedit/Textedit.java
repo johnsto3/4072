@@ -46,25 +46,7 @@ public class Textedit extends JFrame{
 		edit.getItem(1).setText("Copy (Ctrl-C)");
 		edit.getItem(2).setText("Paste (Ctrl-V)");
 		
-		//JToolBar tool = new JToolBar();
-		//add(tool,BorderLayout.NORTH);
-		//tool.add(New);
-		//tool.add(Open);
-		//tool.add(Save);
-		
-		//tool.addSeparator();
-		
-		//No toolbars yet, may remove these
-		
-		//JButton cut = tool.add(Cut), cop = tool.add(Copy),pas = tool.add(Paste);
-		
-		//cut.setText("Cut");// cut.setIcon(new ImageIcon("cut.gif"));
-		//cop.setText(null); cop.setIcon(new ImageIcon("copy.gif"));
-		//pas.setText(null); pas.setIcon(new ImageIcon("paste.gif"));
-		
-		//Update the above images or remove them
-		
-		
+	
 		Save.setEnabled(false);
 		SaveAs.setEnabled(false);
 		
@@ -77,15 +59,18 @@ public class Textedit extends JFrame{
 		
 		
 	private KeyListener k1 = new KeyAdapter() {
-	
+		public void keyPressed(KeyEvent e) {
+			changed = true;
+			Save.setEnabled(true);
+			SaveAs.setEnabled(true);
+		}
 	};
 	//Will be used to detect changes to file
 	
-	Action New = new AbstractAction("New", new ImageIcon("Path/image.gif")) {
+	//Resets text area and offers to save it
+	Action New = new AbstractAction("New") {
 		public void actionPerformed(ActionEvent e) {
-			//saveOld();
-			//Used to save current file before opening
-			//UNCOMMENT THIS LATER
+			saveOld();
 			area.setText("");
 			currentFile = "Untitled";
 			setTitle(currentFile);
@@ -94,33 +79,87 @@ public class Textedit extends JFrame{
 			SaveAs.setEnabled(false);
 		}
 	};
-		//New is implemented now the rest will come later
-	
-	Action Open = new AbstractAction("Open", new ImageIcon("open.gif")) {
+		
+	//Open a file
+	Action Open = new AbstractAction("Open") {
 		public void actionPerformed(ActionEvent e) {
-			
+				saveOld();
+				if(dialog.showOpenDialog(null)==JFileChooser.APPROVE_OPTION) {
+					readInFile(dialog.getSelectedFile().getAbsolutePath());
+				}
+				SaveAs.setEnabled(true);
 		}
 	};
-	
-	Action Save = new AbstractAction("Save", new ImageIcon("save.gif")) {
+	//default save
+	Action Save = new AbstractAction("Save") {
 		public void actionPerformed(ActionEvent e) {
-			
+			if(!currentFile.equals("Untitled"))
+				saveFile(currentFile);
+			else
+				saveFileAs();
 		}
 	};
-	
+	//save as
 	Action SaveAs = new AbstractAction("Save as...") {
 		public void actionPerformed(ActionEvent e) {
-			
+			saveFileAs();
 		}
 	};
 	
-	
+	//Exit program, need to find a way to make the x trigger this
 	Action Quit = new AbstractAction("Quit") {
 		public void actionPerformed(ActionEvent e) {
-			
+			saveOld();
+			System.exit(0);
 		}
 	};
 	//Actions will be coded later, want to get UI working first
+	
+	//Methods here
+	//Save as method
+	private void saveFileAs() {
+		if(dialog.showSaveDialog(null)==JFileChooser.APPROVE_OPTION)
+			saveFile(dialog.getSelectedFile().getAbsolutePath());
+	}
+	//Save a file if quitting or using new
+	private void saveOld() {
+		if(changed) {
+			if(JOptionPane.showConfirmDialog(this, "Would you like to save "+ currentFile +" ?","Save",JOptionPane.YES_NO_OPTION)== JOptionPane.YES_OPTION)
+				saveFile(currentFile);
+		}
+	}
+	//open a file
+	private void readInFile(String fileName) {
+		try {
+			FileReader r = new FileReader(fileName);
+			area.read(r,null);
+			r.close();
+			currentFile = fileName;
+			setTitle(currentFile);
+			changed = false;
+		}
+		catch(IOException e) {
+			Toolkit.getDefaultToolkit().beep();
+			JOptionPane.showMessageDialog(this,"Editor can't find the file called "+fileName);
+		}
+	}
+	//save a file
+	private void saveFile(String fileName) {
+		try {
+			FileWriter w = new FileWriter(fileName);
+			area.write(w);
+			w.close();
+			currentFile = fileName;
+			setTitle(currentFile);
+			changed = false;
+			Save.setEnabled(false);
+		}
+		catch(IOException e) {
+		}
+	}
+	
+	
+	
 	
 	ActionMap m = area.getActionMap();
 	Action Cut = m.get(DefaultEditorKit.cutAction);
